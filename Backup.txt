@@ -1,0 +1,119 @@
+#define SDL_MAIN_HANDLED
+#define STB_IMAGE_IMPLEMENTATION
+#include <SDL.h>
+#include <stb_image.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <clock.h>
+
+const int WINDOW_HEIGHT = 480;
+const int WINDOW_WIDTH = 640;
+
+aiv_context_t* context = NULL;
+aiv_clock_t* aiv_clock = NULL;
+
+time_t theTime;
+struct tm *aTime;
+int seconds = 0;
+
+
+
+int main(int argc, char **argv)
+{
+    //Init Window
+    SDL_Window *mainWindow = NULL;  //To hold the main window
+    SDL_Renderer *renderer = NULL;  //To hold the renderer
+  
+    //Get Time
+    theTime = time(NULL);
+	aTime = localtime(&theTime);
+	seconds = aTime->tm_sec;
+  
+
+    
+    SDL_Rect targetRect;          
+  
+  
+    SDL_Surface *bmpSurface = NULL; //To hold bmp image
+    SDL_Texture *bmpTexture = NULL; //To hold bmp image
+
+    //Initialize SDL and check for errors
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+    {
+        printf("ERROR: could not initialize SDL.");
+    }
+
+    //Create a window
+    mainWindow = SDL_CreateWindow("CHALLENGE", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+
+    if (!mainWindow)
+    {
+        printf("ERROR: could not initialize mainWindow.");
+    }
+
+    //Initialize renderer
+    renderer = SDL_CreateRenderer(mainWindow, -1, SDL_RENDERER_ACCELERATED);
+
+//TODO :fix path
+    // char *buffer = malloc(sizeof(char) * 100);
+    // memset(buffer, 0, sizeof(char));
+    // fgets(buffer,100,stdin);
+
+    //Load image and store in an SDL_Surface
+    bmpSurface = SDL_LoadBMP("SplashScreen.bmp");
+
+    if (!bmpSurface)
+    {
+        printf("ERROR: could not load bmp file.");
+    }
+
+    //Convert surface to texture for rendering
+    bmpTexture = SDL_CreateTextureFromSurface(renderer, bmpSurface);
+
+    if (!bmpTexture)
+    {
+        printf("ERROR: could not convert bmp surface.");
+    }
+
+    SDL_FreeSurface(bmpSurface);
+
+    //Define rectangle where pacman image is to be blitted
+    targetRect.w = 30;
+    targetRect.h = 30;
+    targetRect.x = (WINDOW_WIDTH / 2) - (targetRect.w / 2);
+    targetRect.y = (WINDOW_HEIGHT / 2) - (targetRect.h / 2);
+
+    //Main game loop
+    while (1)
+    {
+        SDL_Event e;
+        while (SDL_PollEvent(&e))
+        {
+            //Quit when user x's out the window
+            if (e.type == SDL_QUIT)
+            {
+                return 0;
+            }
+
+            if (e.type == SDL_KEYDOWN)
+            {
+                if (e.key.keysym.sym == SDLK_ESCAPE)
+                {
+                    return 0;
+                }
+            }
+        }
+
+        SDL_RenderClear(renderer);
+        SDL_RenderCopy(renderer, bmpTexture, NULL, &targetRect);
+        SDL_RenderPresent(renderer);
+    }
+
+    SDL_DestroyWindow(mainWindow);
+    SDL_DestroyTexture(bmpTexture);
+    SDL_DestroyRenderer(renderer);
+    SDL_Quit();
+
+    return 0;
+}

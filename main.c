@@ -1,117 +1,87 @@
 #define SDL_MAIN_HANDLED
-#include "tetris.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+#include <string.h>
+#include "clock.h"
+
+const int WINDOW_HEIGHT = 480;
+const int WINDOW_WIDTH = 640;
+
+time_t theTime;
+struct tm *aTime;
+int seconds = 0;
 
 
 int main(int argc, char **argv)
 {
-	int ret = 0;
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
-	{
-		SDL_Log("unable to initialize SDL2: %s", SDL_GetError());
-		ret = -1;
-		goto cleanup;
-	}
+    //Init Window
+    SDL_Window *mainWindow = NULL;  //To hold the main window
+    SDL_Renderer *renderer = NULL;  //To hold the renderer
+  
+    //Get Time
+    theTime = time(NULL);
+	aTime = localtime(&theTime);
+	seconds = aTime->tm_sec;
+    
+    SDL_Rect targetRect;          
+    SDL_Texture *bmpTexture; 
 
-	SDL_Window *window = SDL_CreateWindow("tetris", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1024, 768, 0);
-	if (!window)
-	{
-		SDL_Log("unable to create window: %s", SDL_GetError());
-		ret = -1;
-		goto cleanup2;
-	}
-	SDL_Renderer *renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
-	if (!renderer)
-	{
-		SDL_Log("unable to create renderer: %s", SDL_GetError());
-		ret = -1;
-		goto cleanup3;
-	}
+    //Initialize SDL and check for errors
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+    {
+        printf("ERROR: could not initialize SDL.");
+    }
 
-	tetris_map_t map;
-	tetris_map_init(&map, 10, 20);
+    //Create a window
+    mainWindow = SDL_CreateWindow("CHALLENGE", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+    if (!mainWindow)
+    {
+        printf("ERROR: could not initialize mainWindow.");
+    }
 
-	tetramino_t tetramino_group[TETRAMINOBODY];
-	tetramino_cube_init(tetramino_group, &map);
+    //Initialize renderer
+    renderer = SDL_CreateRenderer(mainWindow, -1, SDL_RENDERER_ACCELERATED);
 
-	int timer = 1000;
-	Uint32 last_ticks = SDL_GetTicks();
+    clock_t* my_clock = init_clock("hand.png",WINDOW_WIDTH/2, WINDOW_HEIGHT / 2,0,renderer);
+    
+    
+    //Define rectangle where pacman image is to be blitted
+    targetRect.w = 30;
+    targetRect.h = 30;
+    targetRect.x = (WINDOW_WIDTH / 2) - (targetRect.w / 2);
+    targetRect.y = (WINDOW_HEIGHT / 2) - (targetRect.h / 2);
 
-	for (;;)
-	{
-		SDL_Event event;
+    //Main game loop
+    while (1)
+    {
+        SDL_Event e;
+        while (SDL_PollEvent(&e))
+        {
+            //Quit when user x's out the window
+            if (e.type == SDL_QUIT)
+            {
+                return 0;
+            }
 
-		Uint32 current_ticks = SDL_GetTicks();
-		timer -= current_ticks - last_ticks;
-		last_ticks = current_ticks;
+            if (e.type == SDL_KEYDOWN)
+            {
+                if (e.key.keysym.sym == SDLK_ESCAPE)
+                {
+                    return 0;
+                }
+            }
+        }
 
-		if (timer <= 0)
-		{
-			if (tetramino_all_move_down(tetramino_group, &map) == TETRAMINO_DEAD)
-			{
-				for (int i = 0; i < TETRAMINOBODY; i++)
-				{
-					if (tetramino_group[i].y == 0)
-					{
-						goto cleanup4;
-					}
-				}
+        move_clock(renderer, my_clock,&targetRect, seconds);
+        SDL_RenderClear(renderer);
+     //   SDL_RenderCopy(renderer, bmpTexture, NULL, &targetRect);
+        SDL_RenderPresent(renderer);
+    }
 
-				tetramino_cube_init(tetramino_group, &map);
-			}
-			timer = 1000;
-		}
+    SDL_DestroyWindow(mainWindow);
+    SDL_DestroyTexture(bmpTexture);
+    SDL_DestroyRenderer(renderer);
+    SDL_Quit();
 
-		while (SDL_PollEvent(&event))
-		{
-			if (event.type == SDL_QUIT)
-			{
-				goto cleanup4;
-			}
-			if (event.type == SDL_KEYDOWN)
-			{
-				if (event.key.keysym.sym == SDLK_DOWN)
-				{
-					if (tetramino_all_move_down(tetramino_group, &map) == TETRAMINO_DEAD)
-					{
-						for (int i = 0; i < TETRAMINOBODY; i++)
-						{
-							if (tetramino_group[i].y == 0)
-							{
-								goto cleanup4;
-							}
-						}
-
-						tetramino_cube_init(tetramino_group, &map);
-					}
-					timer = 1000;
-				}
-				else if (event.key.keysym.sym == SDLK_RIGHT)
-				{
-					tetramino_all_move_right(tetramino_group, &map);
-				}
-				else if (event.key.keysym.sym == SDLK_LEFT)
-				{
-					tetramino_all_move_left(tetramino_group, &map);
-				}
-			}
-		}
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-		SDL_RenderClear(renderer);
-
-		// draw map
-		tetris_map_draw(&map, renderer, 30);
-
-		//tetramino draw
-		tetramino_group_draw(tetramino_group, renderer, 30);
-
-		SDL_RenderPresent(renderer);
-	}
-cleanup4:
-	SDL_DestroyRenderer(renderer);
-cleanup3:
-	SDL_DestroyWindow(window);
-cleanup2:
-	SDL_Quit();
-cleanup:
-	return ret;
+    return 0;
 }
