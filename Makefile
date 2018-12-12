@@ -1,6 +1,6 @@
 CC=clang
-CFLAGS= -Wall -O3 -Wno-pragma-pack -ID:\Program(x86)\GitHub\Aiv_c_challenge\SDL2\include -ID:\Program(x86)\GitHub\Aiv_c_challenge\stb-master 
-LDFLAGS= -lSDL2 
+CFLAGS= -O3 -Wno-pragma-pack -I SDL2/include 
+LDFLAGS= -lSDL2 -L SDL2/lib/x64
 BINARY= challenge
 BINARY_TESTS=challenge_tests
 
@@ -9,20 +9,22 @@ ifeq ($(OS),Windows_NT)
 	BINARY_TESTS:=$(BINARY_TESTS).exe
 endif
 
-challenge: main.c clock.c
+challenge: main.o clock.o context.o
 	$(CC) -o $(BINARY) $(LDFLAGS) $^
-	
+
 main.o: main.c 
 	$(CC) -c -o $@ $(CFLAGS) $^
 
-tests.o: tests.c
+clock.o: clock.c clock.h
+	$(CC) -c -o $@ $(CFLAGS) $<
+
+context.o: context.c context.h 
+	$(CC) -c -o $@ $(CFLAGS) $<
+
+tests.o: tests.c 
 	$(CC) -c -o $@ $(CFLAGS) $^
 
-clock.o: clock.c
-	$(CC) -c -o $@ $(CFLAGS) $^
-
-#add challenge.o
-test: tests.o 
+test: tests.o context.o clock.o 
 	$(CC) -o $(BINARY_TESTS) $(LDFLAGS) $^
 	./$(BINARY_TESTS)
 

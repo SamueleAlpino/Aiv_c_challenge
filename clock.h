@@ -1,10 +1,11 @@
 
 #include <SDL.h>
+#include "stb_image.h"
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-typedef struct clock{
+typedef struct analogic_clock{
     SDL_Texture* hand;
     SDL_Rect destination;
     int width;
@@ -13,11 +14,10 @@ typedef struct clock{
     int position_x;
     int position_y;
     SDL_Point pivot;
-
-}clock_t;
+}analogic_clock_t;
 
 int get_angle(int seconds); 
 
-struct clock* init_clock(const char* path, int pos_x, int pos_y, int start_seconds, SDL_Renderer* renderer );
+analogic_clock_t* init_clock(const char* path, int pos_x, int pos_y, int start_seconds, SDL_Renderer* renderer );
 
-void move_clock(SDL_Renderer* renderer, clock_t* clock, SDL_Rect* dest, int current_second);
+void move_clock(SDL_Renderer *renderer, analogic_clock_t *clock, int current_second);

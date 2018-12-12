@@ -4,6 +4,8 @@
         "stb_image.h": "c",
         "string.h": "c",
         "time.h": "c",
-        "sdl.h": "c"
+        "sdl.h": "c",
+        "context.h": "c",
+        "aiv_unit_test.h": "c"
     }
 }
